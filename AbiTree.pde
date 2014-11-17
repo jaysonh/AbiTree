@@ -7,10 +7,14 @@ float LEAF_RAND_VEL = 0.2f;
 
 int numLeavesX,numLeavesY;
 
+boolean [][]drawLeaf;
 int [][] leafIndx;
 float [][] leafAngle;
 PVector [][]leafOff;
 PVector [][]leafVel;
+color [][]leafCols;
+
+int leafSeperation = 30;
 void setup()
 {
   size(1024,768);
@@ -24,19 +28,33 @@ void setup()
   }
   imageMode(CENTER);
   
-  numLeavesX = width / 20 +1;
-  numLeavesY = height/ 20 + 1;
+  numLeavesX = width / leafSeperation +1;
+  numLeavesY = height/ leafSeperation +1;
   
+  leafCols = new color[numLeavesY][numLeavesX];
   leafOff = new PVector[numLeavesY][numLeavesX];
   leafVel = new PVector[numLeavesY][numLeavesX];
   leafAngle = new float[numLeavesY][numLeavesX];
   leafIndx = new int[numLeavesY][numLeavesX];
+  drawLeaf = new boolean[numLeavesY][numLeavesX];
   for(int y = 0; y < numLeavesY;y++)
   {
     leafOff[y] = new PVector[numLeavesX];
     leafIndx[y] = new int[numLeavesX];
+    leafCols[y] = new color[numLeavesX];
+    drawLeaf[y] = new boolean[numLeavesX];
+    
     for(int x =0; x < numLeavesX;x++)
     {
+      int imgPixelIndx = (y * leafSeperation) + x*leafSeperation;
+      color c =  refImg.pixels[imgPixelIndx];
+      
+      float col = ( red(c) + green(c) + blue(c));
+       if(col <240*3)
+          drawLeaf[y][x]=false;
+       else
+          drawLeaf[y][x]=true;
+      leafCols[y][x]=color(0,255,0);
       leafIndx[y][x] = (int)random(0,NUM_LEAF_IMAGES);
       leafAngle[y][x] = random(0,TWO_PI);
       leafVel[y][x] = new PVector(random(-LEAF_RAND_VEL,LEAF_RAND_VEL),random(-LEAF_RAND_VEL,LEAF_RAND_VEL));
@@ -48,24 +66,27 @@ void setup()
 
 void draw()
 {
+  frame.setTitle("FPS: " + frameRate);
   background(0);
   image(refImg,width/2,height/2,width,height);
-  for(int y = 0; y < height; y+= 20)
+  for(int y = 0; y < height; y+= leafSeperation)
   {
-     for(int x = 0; x < width; x+=20)
+     for(int x = 0; x < width; x+=leafSeperation)
      {
         color c = refImg.pixels[y * width + x];
         
-        float col =( red(c) + green(c) + blue(c))/3.0;
-        if(col <240)
-        {
+            int xIndx = x / leafSeperation;
+            int yIndx = y / leafSeperation;
+        //float col = ( red(c) + green(c) + blue(c));
+        //if(col <240*3)
+        
           if(!(y>238 && x > 460))
           {
-            int xIndx = x / 20;
-            int yIndx = y / 20;
+            if(drawLeaf[yIndx][xIndx])
+        {
               pushMatrix();
       
-              tint(red(c),green(c),blue(c));
+              tint(leafCols[yIndx][xIndx]);
               translate(x +leafOff[yIndx][xIndx].x, y + leafOff[yIndx][xIndx].y);
              
              leafOff[yIndx][xIndx].x += leafOff[yIndx][xIndx].x;
