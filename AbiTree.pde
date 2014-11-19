@@ -1,23 +1,36 @@
+boolean useLeafFade = true;
+
 int NUM_LEAF_IMAGES = 28;
 PImage [] leafImgs = new PImage[NUM_LEAF_IMAGES];
 PImage refImg;
 
-float LEAF_RAND_OFF = 10.0f;
-float LEAF_RAND_VEL = 0.2f;
 
 int numLeavesX,numLeavesY;
 
-boolean [][]drawLeaf;
-int [][] leafIndx;
-float [][] leafAngle;
-PVector [][]leafOff;
-PVector [][]leafVel;
-color [][]leafCols;
+Leaf [][]leaves;
 
 int leafSeperation = 30;
+
+int NUM_LEAF_COLOURS = 13;
+color []leafColors = { color(226,235,167), 
+                       color(231,233,121), 
+                       color(171,213,145), 
+                       color(160,206,94), 
+                       color(127,197,97), 
+                       color(139,192,139), 
+                       color(89,188,113), 
+                       color(101,168,78), 
+                       color(116,160,102), 
+                       color(116,160,102), 
+                       color(90,137,96), 
+                       color(67,108,61), 
+                       color(41,80,43)};
+                       
+float windSpeed = 0.0f;
+                       
 void setup()
 {
-  size(1024,768);
+  size(1024,768,OPENGL);
   refImg = loadImage("tree-example-page-001-rotated.jpg");
   
   
@@ -26,85 +39,77 @@ void setup()
      int indx = i +19;
      leafImgs[i] = loadImage("data/final-leaves_" +indx + ".png"); 
   }
-  imageMode(CENTER);
+  imageMode(CORNER);
   
   numLeavesX = width / leafSeperation +1;
   numLeavesY = height/ leafSeperation +1;
   
-  leafCols = new color[numLeavesY][numLeavesX];
-  leafOff = new PVector[numLeavesY][numLeavesX];
-  leafVel = new PVector[numLeavesY][numLeavesX];
-  leafAngle = new float[numLeavesY][numLeavesX];
-  leafIndx = new int[numLeavesY][numLeavesX];
-  drawLeaf = new boolean[numLeavesY][numLeavesX];
+  leaves = new Leaf[numLeavesY][numLeavesX];
+ 
   for(int y = 0; y < numLeavesY;y++)
   {
-    leafOff[y] = new PVector[numLeavesX];
-    leafIndx[y] = new int[numLeavesX];
-    leafCols[y] = new color[numLeavesX];
-    drawLeaf[y] = new boolean[numLeavesX];
+    leaves[y] = new Leaf[numLeavesX];
+    
     
     for(int x =0; x < numLeavesX;x++)
     {
-      int imgPixelIndx = (y * leafSeperation) + x*leafSeperation;
+      int imgPixelIndx = (y * leafSeperation) * refImg.width + x*leafSeperation;
       color c =  refImg.pixels[imgPixelIndx];
+      leaves[y][x]=new Leaf();
+      if(!(y*leafSeperation >238 && x*leafSeperation > 460))
+          leaves[y][x].draw=true;
+        else if(random(0,100) < 6)
+          leaves[y][x].draw=true;
+        else
+          leaves[y][x].draw=false;
+        
       
-      float col = ( red(c) + green(c) + blue(c));
-       if(col <240*3)
-          drawLeaf[y][x]=false;
-       else
-          drawLeaf[y][x]=true;
-      leafCols[y][x]=color(0,255,0);
-      leafIndx[y][x] = (int)random(0,NUM_LEAF_IMAGES);
-      leafAngle[y][x] = random(0,TWO_PI);
-      leafVel[y][x] = new PVector(random(-LEAF_RAND_VEL,LEAF_RAND_VEL),random(-LEAF_RAND_VEL,LEAF_RAND_VEL));
-      leafOff[y][x] = new PVector(random(-LEAF_RAND_OFF,LEAF_RAND_OFF),random(-LEAF_RAND_OFF,LEAF_RAND_OFF));
-    }
+         }
   }
-  //noLoop();
+  
+  frameRate(25.0);
 }
 
 void draw()
 {
   frame.setTitle("FPS: " + frameRate);
   background(0);
-  image(refImg,width/2,height/2,width,height);
-  for(int y = 0; y < height; y+= leafSeperation)
+  noTint();
+  image(refImg,0,0,width,height);
+  for(int y = leafSeperation; y < height-leafSeperation; y+= leafSeperation)
   {
-     for(int x = 0; x < width; x+=leafSeperation)
+     for(int x = leafSeperation; x < width-leafSeperation; x+=leafSeperation)
      {
         color c = refImg.pixels[y * width + x];
         
             int xIndx = x / leafSeperation;
             int yIndx = y / leafSeperation;
-        //float col = ( red(c) + green(c) + blue(c));
-        //if(col <240*3)
-        
-          if(!(y>238 && x > 460))
-          {
-            if(drawLeaf[yIndx][xIndx])
-        {
-              pushMatrix();
-      
-              tint(leafCols[yIndx][xIndx]);
-              translate(x +leafOff[yIndx][xIndx].x, y + leafOff[yIndx][xIndx].y);
-             
-             leafOff[yIndx][xIndx].x += leafOff[yIndx][xIndx].x;
-             leafOff[yIndx][xIndx].y += leafOff[yIndx][xIndx].y;
-             
-             if(dist(0,0,leafOff[yIndx][xIndx].x,leafOff[yIndx][xIndx].y) > 25.0f)
-             {
-               leafOff[yIndx][xIndx] = new PVector(0.0f,0.0f); 
-               leafVel[yIndx][xIndx] = new PVector(random(-LEAF_RAND_VEL,LEAF_RAND_VEL),random(-LEAF_RAND_VEL,LEAF_RAND_VEL));
-    
-             }
-              rotate(leafAngle[yIndx][xIndx]);
-              image(leafImgs[leafIndx[yIndx][xIndx]],0,0);
-              popMatrix();
-          }
-        }
+       
+         
+          leaves[yIndx][xIndx].draw(x,y);
+          
+          
      } 
   }
+  
+  //drawBorder();
+  float mouseMoveDist = dist(pmouseX,pmouseY,mouseX,mouseY);
+  if(mouseMoveDist > 0.0f)
+  {
+    windSpeed += 0.025f;
+    if(windSpeed > 1.0f) windSpeed = 1.0f;
+  }else
+    windSpeed *= 0.75f;
+}
+
+void drawBorder()
+{
+  noStroke();
+  fill(255);
+  rect(0,0,19,height);  
+  rect(width-19,0,19,height);
+  rect(0,0,width,19);
+  rect(0,height-19,width,19);
 }
 
 void mousePressed()
