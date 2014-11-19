@@ -1,5 +1,6 @@
 boolean useLeafFade = true;
 
+  float windSpeedInc = 0.002f;
 int NUM_LEAF_IMAGES = 28;
 PImage [] leafImgs = new PImage[NUM_LEAF_IMAGES];
 PImage refImg;
@@ -92,14 +93,15 @@ void draw()
      } 
   }
   
-  //drawBorder();
+  drawBorder();
   float mouseMoveDist = dist(pmouseX,pmouseY,mouseX,mouseY);
   if(mouseMoveDist > 0.0f)
   {
-    windSpeed += 0.025f;
+    windSpeed += windSpeedInc;
+    
     if(windSpeed > 1.0f) windSpeed = 1.0f;
   }else
-    windSpeed *= 0.75f;
+    windSpeed *= 0.95f;
 }
 
 void drawBorder()
